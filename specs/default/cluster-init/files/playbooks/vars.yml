@@ -1,5 +1,5 @@
 ondemand_version: 4.0.0
-auth_method: Basic # [Basic, LDAP, Entra]
+auth_method: Entra # [Basic, LDAP, Entra]
 ood_fqdn:
 
 # LDAP config
@@ -14,7 +14,7 @@ group_base_DN:
 
 # Entra config
 client_id: 
-entra_map_match: 
+entra_map_match: contoso.com
 tenant_id: 
 
 # OOD connection app settings
