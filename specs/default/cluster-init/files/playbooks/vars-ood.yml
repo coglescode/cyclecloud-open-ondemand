@@ -1,8 +1,8 @@
 ---
-ood_install_apps:
-  cc_connect:
-    repo: '{{ git_url }}'
-    version: main
+# ood_install_apps:
+#   cc_connect:
+#     repo: '{{ git_url }}'
+#     version: main
   # ccw_codeserver:
   #   repo: 'https://github.com/xpillons/ccw_codeserver.git'
   #   version: main

@@ -9,12 +9,6 @@
 set -e
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# OOD connection app settings. GIT URL to the OOD connection application to install in OOD.
-# Point these variables to your GIT repo that has the OOD connection app
-git_url="https://github.com/xpillons/oodconnect4cc.git"
-git_branch="main"
-
-
 # Install Ansible and other dependencies
 chmod +x $script_dir/../files/*.sh
 if [ ! -e prereqs_install.ok ]; then
