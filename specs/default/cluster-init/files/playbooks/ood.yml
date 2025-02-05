@@ -82,45 +82,11 @@
       src: files/proxy.lua
       dest: /opt/ood/mod_ood_proxy/lib/ood/proxy.lua
       mode: 0644
-    
-  ## =============================================================================================
-  #
-  #               Add the CycleCloud Connect Cluster application
-  #
-  ## Begin =======================================================================================
-  - name: Use Python3 wrapper for passenger apps
-    lineinfile:
-      state: present
-      dest: /etc/ood/config/nginx_stage.yml
-      regexp: "^#passenger_python|^passenger_python"
-      line: "passenger_python: '/mnt/cluster-init/ood/default/files/python_wrapper.sh'"
 
-  # Fix permissions for the Ansible directory, so the vars.yml file can be written
-  - name: Fix permissions
-    ansible.builtin.file:
-      path: /var/www/ood/apps/sys/cc_connect/Ansible
-      mode: '0777'
-      state: directory
-
-  # Fix permissions for the CycleCloud Connect directory
-  - name: Fix permissions
-    ansible.builtin.file:
-      path: /var/www/ood/apps/sys/cc_connect/
-      mode: '0773' # Owner RWX, Group RWX, Public --X this limits it only to root and users in the cyclecloud admin group
-      owner: 'root'
-      group: 'cyclecloud'
-      state: directory
-
-  - name: Initialize application
-    file:
-      path: /var/lib/ondemand-nginx/config/apps/sys/cc_connect.conf
-      state: touch
-
-  - name: update nginx stage
-    shell: |
-      /opt/ood/nginx_stage/sbin/update_nginx_stage &>/dev/null || :
-
-  ## End =========================================================================================
+  # Install the OOD applications    
+  - name: Install the OOD applications
+    include_role:
+      name: ood_applications
 
   # Turn off the default bc_desktop
   - name: Turn off the default bc_desktop
