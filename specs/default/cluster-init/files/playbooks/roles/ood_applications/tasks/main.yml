@@ -1,11 +1,9 @@
 ---
-- name: Copy application files
+- name: Copy connect_cluster application files
   copy:
-    src: '{{role_path}}/files/{{ item.name }}'
+    src: '{{role_path}}/files/connect_cluster'
     dest: /var/www/ood/apps/sys/
     mode: 0755
-  loop:
-    - { name: 'connect_cluster' }
 
   # Fix permissions for the Ansible directory, so the vars.yml file can be written
   - name: Fix permissions
