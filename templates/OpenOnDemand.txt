@@ -166,7 +166,7 @@ Order = 20
         Config.Plugin = pico.form.Dropdown
         Config.FreeForm = true
         Config.Entries := {[Value="Basic"], [Value="LDAP"], [Value="Entra"]}
-        DefaultValue = "Basic"
+        DefaultValue = "Entra"
 
         ## LDAP options
         ## ============
