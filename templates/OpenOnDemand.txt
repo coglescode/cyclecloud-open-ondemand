@@ -1,0 +1,302 @@
+##################################
+## OpenOnDemand Server Template ##
+##################################
+
+[cluster OpenOnDemand]
+FormLayout = selectionpanel
+Category = Applications
+IconUrl = "https://raw.githubusercontent.com/OSC/ondemand/refs/heads/master/apps/dashboard/app/assets/images/OpenOnDemand_stack_RGB.svg"
+
+Autoscale = false
+
+    [[node defaults]]
+
+    Credentials = $Credentials
+    ImageName = $ImageName
+    SubnetId = $SubnetId
+    Region = $Region
+    KeyPairLocation = ~/.ssh/cyclecloud.pem
+    UsePublicNetwork = $UsePublicNetwork
+    Azure.Identities = $ManagedIdentity
+    Tags = $NodeTags
+
+        [[[configuration]]]
+
+        # Disable normal NFS exports and mounts
+        cyclecloud.mounts.sched.disabled = true
+        cyclecloud.mounts.shared.disabled = true
+        cyclecloud.exports.sched.disabled = true
+        cyclecloud.exports.shared.disabled = true
+        cyclecloud.exports.sched.samba.enabled = false
+        cyclecloud.exports.shared.samba.enabled = false
+        cyclecloud.exports.defaults.samba.enabled = false      
+        cshared.server.legacy_links_disabled = true
+
+        # Disable ip-XXXXXXXX hostname generation
+        cyclecloud.hosts.standalone_dns.enabled = false
+        cyclecloud.hosts.simple_vpc_dns.enabled = false
+
+        # May be used to identify the ID in cluster-init scripts
+        cluster.identities.default = $ManagedIdentity
+
+        # Open OnDemand Authentication options
+        ood.server_name = $ood_server_name
+        ood.auth_method = $ood_auth_method
+        ## LDAP config - add values here if using LDAP
+        ood.ldap_host= $ood_ldap_host  # LDAP server host and port
+        ood.ldap_bind_dn= $ood_ldap_bind_dn  # Bind DN for LDAP
+        ood.ldap_bind_pwd= $ood_ldap_bind_pwd  # Password for the bind DN
+        ood.ldap_user_base_dn= $ood_ldap_user_base_dn  # Base DN for user entries
+        ood.ldap_group_base_dn= $ood_ldap_group_base_dn  # Base DN for group entries
+
+        # Entra config - add values here if using Entra
+        ood.entra_client_id= $ood_entra_client_id  # Client ID for Entra
+        ood.entra_tenant_id= $ood_entra_tenant_id  # Tenant ID for Entra
+        ood.entra_user_map_match = $ood_entra_user_map_match # User domain mapping
+
+
+        [[[configuration cyclecloud.mounts.nfs_shared]]]
+        type = nfs
+        mountpoint = /shared
+        export_path = $NFSSharedExportPath
+        address = $NFSAddress
+        options = $NFSSharedMountOptions
+
+        [[[configuration cyclecloud.mounts.nfs_home]]]
+        type = nfs
+        mountpoint = /home
+        export_path = ${strcat(NFSSharedExportPath, "/home")}
+        address = $NFSAddress
+        options = $NFSSharedMountOptions
+
+    [[node OOD]]
+
+    MachineType = $MachineType
+    IsReturnProxy = $ReturnProxy
+    AdditionalClusterInitSpecs = $ClusterInitSpecs
+    ComputerName = "ood"
+
+        [[[configuration]]]
+        cyclecloud.discoverable = true
+        run_list = recipe[cuser]
+
+        [[[volume boot]]]
+        Size = ${ifThenElse(BootDiskSize > 0, BootDiskSize, undefined)}
+        SSD = True
+
+        [[[network-interface eth0]]]
+        AssociatePublicIpAddress = $UsePublicNetwork
+        NetworkInterfaceId = $ood_nic
+
+        [[[cluster-init ood:default:1.0.0]]]
+
+
+[parameters About]
+Order = 1
+
+    [[parameters About OOD]]
+
+        [[[parameter Filer]]]
+        HideLabel = true
+        Config.Plugin = pico.widget.HtmlTemplateWidget
+        Config.Template = '''<table role="presentation"><tr><td><img alt="OOD logo" src="https://raw.githubusercontent.com/OSC/ondemand/refs/heads/master/apps/dashboard/app/assets/images/OpenOnDemand_stack_RGB.svg" width="164" height="43"></td></tr><tr><td><p>Creates an <a href="https://openondemand.org/" target="_blank">Open OnDemand</a> portal that can be connected to CycleCloud Clusters</p><p>Follow the instructions in the <a href="https://github.com/xpillons/ood4cc/" target="_blank">README</a> for details on instructions on extending and configuring the Project for your environment.</p></td></tr></table>'''
+
+        [[[parameter Readme]]]
+        HideLabel = true
+        Config.Plugin = pico.widget.HtmlTemplateWidget
+        Config.Template := "Follow the instructions in the README for details on extending and configuring the project for your environment."
+
+
+[parameters Required Settings]
+Order = 10
+
+    [[parameters Virtual Machines ]]
+    Description = "settings for Open OnDemand virtual machine"
+    Order = 20
+
+        [[[parameter Region]]]
+        Label = Region
+        Description = Deployment Location
+        ParameterType = Cloud.Region
+
+        [[[parameter MachineType]]]
+        Label = OOD Machine Type
+        Description = The machine type for the Open OnDemand Server host
+        ParameterType = Cloud.MachineType
+        DefaultValue = Standard_D4as_v4
+
+        [[[parameter NodeTags]]]
+        Label = VM Tags
+        Description = Tags applied to all nodes
+        ParameterType = Record
+        DefaultValue := []
+        Config.MultiSelect = false
+
+    [[parameters Networking]]
+    Order = 40
+
+        [[[parameter SubnetId]]]
+        Label = Subnet ID
+        Description = Subnet Resource Path (ResourceGroup/VirtualNetwork/Subnet)
+        ParameterType = Azure.Subnet
+        Required = True
+
+        [[[parameter ood_nic]]]
+        Label = Network Interface ID
+        Description = Network Interface Card resource ID to attach to
+        ParameterType = String
+
+
+[parameters Advanced Settings]
+Order = 20
+
+    [[parameters Open OnDemand Authentication Settings]]
+    Order = 5
+
+        [[[parameter ood_server_name]]]
+        Label = FQDN 
+        Description = The FQDN for the Self Signed SSL Certificate. Leave blank to use the assigned private IP
+        Config.ParameterType = String
+
+        [[[parameter ood_auth_method]]]
+        Required = True
+        Label = Authentication
+        Description = Authentication Method
+        ParameterType = StringList
+        Config.Plugin = pico.form.Dropdown
+        Config.FreeForm = true
+        Config.Entries := {[Value="Basic"], [Value="LDAP"], [Value="Entra"]}
+        DefaultValue = "Basic"
+
+        ## LDAP options
+        ## ============
+        [[[parameter ood_ldap_host]]]
+        Label = LDAP Server 
+        Description = The LDAP server host and port
+        Config.ParameterType = String
+        Conditions.Excluded := ood_auth_method != "LDAP"
+
+        [[[parameter ood_ldap_bind_dn]]]
+        Label = Bind DN 
+        Description = Bind DN for LDAP (cn=LDAP Binder,dc=hpc,dc=azure)
+        Config.ParameterType = String
+        Conditions.Excluded := ood_auth_method != "LDAP"
+
+        [[[parameter ood_ldap_bind_pwd]]]
+        Label = Bind Password
+        Description = Password for the bind DN
+        Config.ParameterType = String
+        Conditions.Excluded := ood_auth_method != "LDAP"
+
+        [[[parameter ood_ldap_user_base_dn]]]
+        Label = Search Users DN
+        Description = Base DN for user entries (ou=Users,dc=hpc,dc=azure)
+        Config.ParameterType = String
+        Conditions.Excluded := ood_auth_method != "LDAP"
+
+        [[[parameter ood_ldap_group_base_dn]]]
+        Label = Search Group DN
+        Description = Base DN for group entries
+        Config.ParameterType = String
+        Conditions.Excluded := ood_auth_method != "LDAP"
+
+        ## Entra options
+        ## ============
+        [[[parameter ood_entra_client_id]]]
+        Label = Client ID
+        Description = Client or Application ID for Entra
+        Config.ParameterType = String
+        Conditions.Excluded := ood_auth_method != "Entra"
+
+        [[[parameter ood_entra_user_map_match]]]
+        Label = User Domain
+        Description = User domain mapping without '@'
+        Config.ParameterType = String
+        Conditions.Excluded := ood_auth_method != "Entra"
+
+        [[[parameter ood_entra_tenant_id]]]
+        Label = Tenand Id
+        Description = Tenant Id
+        Config.ParameterType = String
+        Conditions.Excluded := ood_auth_method != "Entra"
+
+    [[parameters Azure Settings]]
+    Order = 10 
+
+        [[[parameter Credentials]]]
+        Description = The credentials for the cloud provider
+        ParameterType = Cloud.Credentials
+
+        [[[parameter ManagedIdentity]]]
+        Label = Managed Id
+        Description = Optionally assign an Azure user assigned managed identity to all nodes to access Azure resources using assigned roles.
+        ParameterType = Azure.ManagedIdentity
+        DefaultValue = =undefined
+
+        [[[parameter BootDiskSize]]]
+        Description = Optional: Size of the OS/boot disk in GB for all nodes in the cluster (leave at 0 to use Image size)
+        ParameterType = Integer
+        Config.Plugin = pico.form.NumberTextBox
+        Config.MinValue = 0
+        Config.MaxValue = 32,000
+        Config.IntegerOnly = true
+        Config.Increment = 64
+        DefaultValue = 0
+
+
+    [[parameters Software]]
+    Description = "Specify the base OS installed for the Open OnDemand VM"
+
+    Order = 20
+
+        [[[parameter ImageName]]]
+        Label = Base OS for Open OnDemand
+        ParameterType = Cloud.Image
+        Config.OS = linux
+        DefaultValue = cycle.image.ubuntu22
+        Config.Filter := Package in {"cycle.image.ubuntu22", "almalinux8"}
+
+        [[[parameter ClusterInitSpecs]]]
+        Label = Cluster-Init Projects
+        DefaultValue = =undefined
+        Description = Cluster init specs to apply to the OOD VM
+        ParameterType = Cloud.ClusterInitSpecs
+
+    [[parameters Advanced Networking]]
+    Description = Advanced networking settings
+
+        [[[parameter ReturnProxy]]]
+        Label = Return Proxy
+        DefaultValue = false
+        ParameterType = Boolean
+        Config.Label = Use SSH tunnel to connect to CycleCloud (required if direct access is blocked)
+
+        [[[parameter UsePublicNetwork]]]
+        Label = Public IP
+        DefaultValue = false
+        ParameterType = Boolean
+        Config.Label = Access master node from the Internet
+
+    [[parameters Default NFS Share]]
+    Order = 30
+    Label = File-system Mount for /shared
+
+        [[[parameter About shared]]]
+        HideLabel = true
+        Config.Plugin = pico.widget.HtmlTemplateWidget
+        Config.Template = ''' <p>Users' home directories reside within the <code>/shared</code> mountpoint with the base homedir <code>/shared/home</code>.</p>'''
+        Order = 6
+
+        [[[parameter NFSAddress]]]
+        Label = IP Address
+        Description = The IP address or hostname of the NFS server. Also accepts a list comma-separated addresses.
+        Config.ParameterType = String
+
+        [[[parameter NFSSharedExportPath]]]
+        Label = Export Path
+        Description = The path exported by the file system
+        DefaultValue = /shared
+
+        [[[parameter NFSSharedMountOptions]]]
+        Label = Mount Options
+        Description = NFS Client Mount Options        

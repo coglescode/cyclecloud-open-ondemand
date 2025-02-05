@@ -1,0 +1,13 @@
+---
+# - name: install application dependencies
+#   yum:
+#     name: "python3-flask"
+#     state: present
+#     lock_timeout : 180
+
+- name: Ensure apache is restarted
+  service: 
+    name: httpd
+    state: restarted
+    enabled: yes
+

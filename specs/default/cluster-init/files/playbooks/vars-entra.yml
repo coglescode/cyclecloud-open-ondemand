@@ -1,0 +1,36 @@
+---
+httpd_auth:
+- AuthType openid-connect
+- Require valid-user
+# oidc_settings:
+#   OIDCSSLValidateServer: "Off" # Required due to self signed certs
+
+# Configuration for Entra ID with Federated Identity
+# 1 - Create and attach a User Managed Identity for the OOD VM
+# 2 - Create a new application in Entra ID
+# 3 - Configure the application with the following settings:
+#     - Redirect URI: https://{{ ood_fqdn }}/oidc
+#     - Check the ID tokens in Implicit grant and hybrid flows
+#     - In Token Configuration add an optional claim
+#         - Token Type: ID
+#         - Check 'upn' in the claim list
+#     - Check 'Turn on the Microsoft Graph profile permission (required for claims to appear in token).'
+#     - In Certificate & Secrets, add a Federated Credentials using the OOD VM User Managed Identity, leave the default audience to api://AzureADTokenExchange
+
+ood_auth_openidc:
+  OIDCProviderMetadataURL: 'https://login.microsoftonline.com/{{tenant_id}}/v2.0/.well-known/openid-configuration'
+  OIDCClientID: '{{ client_id }}'
+  OIDCResponseType: 'id_token'
+  OIDCRemoteUserClaim: 'upn'
+  OIDCScope: 'openid profile'
+  OIDCCryptoPassphrase: "exec:/bin/bash -c \"head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32\""
+  OIDCPassIDTokenAs: 'serialized'
+  OIDCPassRefreshToken: 'On'
+  OIDCPassClaimsAs: 'environment'
+  OIDCStateMaxNumberOfCookies: [7, true]
+
+#oidc_remote_user_claim: "email"
+logout_redirect: "/oidc?logout=https%3A%2F%2F{{ ood_fqdn }}"
+oidc_uri: /oidc
+
+user_map_match: '^([^@]+)@{{ entra_map_match }}$'

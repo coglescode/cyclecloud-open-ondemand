@@ -1,0 +1,146 @@
+- hosts: localhost
+  gather_facts: no
+  become: true
+  vars_files: vars.yml
+
+  tasks:
+  - name: Wait 300 seconds for the nodes to be ready
+    wait_for_connection:
+      timeout: 300
+  - name: Gather facts for first time
+    setup:
+
+  - name: Perform OS dependent configuration tasks
+    include_tasks: "{{ansible_distribution}}/pre_install.yml"
+
+  - name: set httpd_auth values
+    ansible.builtin.include_vars:
+      file: "vars-{{auth_method | lower}}.yml"
+
+  - name: Set up PAM authentication for OOD
+    include_role:
+      name: ood_pam_auth
+
+  - name: set variables for Ubuntu
+    set_fact:
+      ood_package: "ondemand={{ondemand_version}}"
+
+  # TODO: Add a way to provide it's own certificate files cert, key, and chain
+  - name: Generate a Self Signed OpenSSL certificate
+    shell: |
+      mkdir -pv /etc/ssl/{{ ood_fqdn }}
+      cd /etc/ssl/{{ ood_fqdn }}
+      openssl req -nodes -new -x509 -keyout {{ ood_fqdn }}.key -out {{ ood_fqdn }}.crt -subj "/CN={{ ood_fqdn }}"
+    args:
+      creates: "/etc/ssl/{{ ood_fqdn }}/{{ ood_fqdn }}.crt"
+
+  - name: Run the ood-ansible role for HTTPS
+    include_role:
+      name: ood-ansible
+    vars:
+      ondemand_package: '{{ ood_package }}'
+      servername: '{{ ood_fqdn }}'
+      httpd_port: 443
+      ssl:
+        - SSLCertificateFile "/etc/ssl/{{ ood_fqdn }}/{{ ood_fqdn }}.crt"
+        - SSLCertificateKeyFile "/etc/ssl/{{ ood_fqdn }}/{{ ood_fqdn }}.key"
+        - SSLProtocol all -SSLv2 -SSLv3 -TLSv1 -TLSv1.1
+        - SSLCipherSuite ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256
+        - SSLVerifyClient none
+        - SSLProxyEngine On
+        - SSLProxyVerify none
+        - SSLProxyProtocol TLSv1.2
+        - SSLProxyCheckPeerName off
+        - SSLProxyVerify none
+        - SSLProxyCheckPeerCN Off
+        - SSLProxyCheckPeerName Off
+        - SSLProxyCheckPeerExpire Off
+
+  - name: Perform OS dependent post installation tasks
+    include_tasks: "{{ansible_distribution}}/post_install.yml"
+
+  # Restart the Dex service only when using LDAP or Entra, this need to be done after the restart of Apache so the new OOD configuration will be created
+  - name: Start dex
+    ansible.builtin.service:
+      name: ondemand-dex.service
+      state: restarted
+      enabled: true
+    when: auth_method in ['LDAP']
+
+  # Create a script to run before the PUN is created, to set the user's environment if not exists
+  # Defined in the pun_pre_hook_root_cmd variable set in the ood-overrides-common.yml file
+  - name: Copy the pun_pre_hook script
+    copy: 
+      src: files/pun_pre_hook.sh
+      dest: /etc/ood/config/pun_pre_hook.sh
+      mode: 0755
+
+  # Hack to support SSL proxied apps with port 443 => only needed for Thinlinc at the moment
+  # /opt/ood/mod_ood_proxy/lib/ood/proxy.lua
+  - name: Copy the updated proxy.lua 
+    copy: 
+      src: files/proxy.lua
+      dest: /opt/ood/mod_ood_proxy/lib/ood/proxy.lua
+      mode: 0644
+    
+  ## =============================================================================================
+  #
+  #               Add the CycleCloud Connect Cluster application
+  #
+  ## Begin =======================================================================================
+  - name: Use Python3 wrapper for passenger apps
+    lineinfile:
+      state: present
+      dest: /etc/ood/config/nginx_stage.yml
+      regexp: "^#passenger_python|^passenger_python"
+      line: "passenger_python: '/mnt/cluster-init/ood/default/files/python_wrapper.sh'"
+
+  # Fix permissions for the Ansible directory, so the vars.yml file can be written
+  - name: Fix permissions
+    ansible.builtin.file:
+      path: /var/www/ood/apps/sys/cc_connect/Ansible
+      mode: '0777'
+      state: directory
+
+  # Fix permissions for the CycleCloud Connect directory
+  - name: Fix permissions
+    ansible.builtin.file:
+      path: /var/www/ood/apps/sys/cc_connect/
+      mode: '0773' # Owner RWX, Group RWX, Public --X this limits it only to root and users in the cyclecloud admin group
+      owner: 'root'
+      group: 'cyclecloud'
+      state: directory
+
+  - name: Initialize application
+    file:
+      path: /var/lib/ondemand-nginx/config/apps/sys/cc_connect.conf
+      state: touch
+
+  - name: update nginx stage
+    shell: |
+      /opt/ood/nginx_stage/sbin/update_nginx_stage &>/dev/null || :
+
+  ## End =========================================================================================
+
+  # Turn off the default bc_desktop
+  - name: Turn off the default bc_desktop
+    ansible.builtin.file:
+      path: /var/www/ood/apps/sys/bc_desktop
+      mode: '0600'
+      state: directory
+
+  # Create an announcement to connect a cluster
+  - name: Copy the announcement file 
+    copy: 
+      src: files/announcement.yml
+      dest: /etc/ood/config/announcement.yml
+
+  # - name: Generate new ood_portal.conf file
+  #   shell: |
+  #     /opt/ood/ood-portal-generator/sbin/update_ood_portal -f
+  #   environment:
+  #     PATH: '/usr/bin:{{ ansible_env.PATH }}'
+
+
+
+

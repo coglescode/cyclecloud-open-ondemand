@@ -1,0 +1,13 @@
+---
+# - name: install python3-pip
+#   apt:
+#     name: python3-pip
+#     state: latest
+
+# - name: install flask
+#   shell: pip3 install flask
+
+- name: activate new apache2 configuration in Ubuntu
+  service:
+    name: apache2
+    state: reloaded
