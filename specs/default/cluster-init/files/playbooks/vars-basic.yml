@@ -1,7 +1,0 @@
----
-httpd_auth:
-  - AuthType Basic
-  - AuthName "Open OnDemand"
-  - AuthBasicProvider external
-  - AuthExternal pwauth
-  - Require valid-user

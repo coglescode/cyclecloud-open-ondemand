@@ -42,12 +42,6 @@ Autoscale = false
         # Open OnDemand Authentication options
         ood.server_name = $ood_server_name
         ood.auth_method = $ood_auth_method
-        ## LDAP config - add values here if using LDAP
-        ood.ldap_host= $ood_ldap_host  # LDAP server host and port
-        ood.ldap_bind_dn= $ood_ldap_bind_dn  # Bind DN for LDAP
-        ood.ldap_bind_pwd= $ood_ldap_bind_pwd  # Password for the bind DN
-        ood.ldap_user_base_dn= $ood_ldap_user_base_dn  # Base DN for user entries
-        ood.ldap_group_base_dn= $ood_ldap_group_base_dn  # Base DN for group entries
 
         # Entra config - add values here if using Entra
         ood.entra_client_id= $ood_entra_client_id  # Client ID for Entra
@@ -146,7 +140,6 @@ Order = 10
         Description = Network Interface Card resource ID to attach to
         ParameterType = String
 
-
 [parameters Advanced Settings]
 Order = 20
 
@@ -165,40 +158,8 @@ Order = 20
         ParameterType = StringList
         Config.Plugin = pico.form.Dropdown
         Config.FreeForm = true
-        Config.Entries := {[Value="Basic"], [Value="LDAP"], [Value="Entra"]}
+        Config.Entries := {[Value="Entra"]}
         DefaultValue = "Entra"
-
-        ## LDAP options
-        ## ============
-        [[[parameter ood_ldap_host]]]
-        Label = LDAP Server 
-        Description = The LDAP server host and port
-        Config.ParameterType = String
-        Conditions.Excluded := ood_auth_method != "LDAP"
-
-        [[[parameter ood_ldap_bind_dn]]]
-        Label = Bind DN 
-        Description = Bind DN for LDAP (cn=LDAP Binder,dc=hpc,dc=azure)
-        Config.ParameterType = String
-        Conditions.Excluded := ood_auth_method != "LDAP"
-
-        [[[parameter ood_ldap_bind_pwd]]]
-        Label = Bind Password
-        Description = Password for the bind DN
-        Config.ParameterType = String
-        Conditions.Excluded := ood_auth_method != "LDAP"
-
-        [[[parameter ood_ldap_user_base_dn]]]
-        Label = Search Users DN
-        Description = Base DN for user entries (ou=Users,dc=hpc,dc=azure)
-        Config.ParameterType = String
-        Conditions.Excluded := ood_auth_method != "LDAP"
-
-        [[[parameter ood_ldap_group_base_dn]]]
-        Label = Search Group DN
-        Description = Base DN for group entries
-        Config.ParameterType = String
-        Conditions.Excluded := ood_auth_method != "LDAP"
 
         ## Entra options
         ## ============

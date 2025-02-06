@@ -1,71 +1,8 @@
 ---
-# ood_install_apps:
-#   cc_connect:
-#     repo: '{{ git_url }}'
-#     version: main
-  # ccw_codeserver:
-  #   repo: 'https://github.com/xpillons/ccw_codeserver.git'
-  #   version: main
-  # login_codeserver:
-  #   repo: 'https://github.com/xpillons/login_codeserver.git'
-  #   version: main
-  # ccw_jupyter:
-  #   repo: 'https://github.com/xpillons/ccw_jupyter.git'
-  #   version: main
-  # ood_thinlinc:
-  #   repo: 'https://github.com/xpillons/ood_thinlinc.git'
-  #   version: main
-
 ood_apps:
   dashboard:
     env:
       ood_bc_dynamic_js: true
-#     file_upload_max: "{{ondemand.file_upload_max | default(omit)}}"
-
-  # bc_desktop:
-  #   title: "Linux Desktop"
-  #   cluster: ccw
-  #   icon: fa://linux
-  #   form:
-  #     - desktop
-  #     - target
-  #     - bc_num_hours
-  #   attributes:
-  #     desktop: mate
-  #     target:
-  #       widget: "select"
-  #       label: "Session target"
-  #       help: |
-  #         Select the resource target for the remote desktop session <br>
-  #       options:
-  #         - htc
-  #         - hpc
-  #         - gpu
-  #     bc_num_hours:
-  #       widget: "number_field"
-  #       label: "Maximum duration in hours of your remote session"
-  #       value: 1
-  #       help: |
-  #         This is the maximum duration in hours of your remote session once started. <br> 
-  #       step: 1
-  #   submit: |
-  #     <%-
-  #       scheduler_args = ["-p", target]
-
-  #       # If the user has specified a node ratio greather than 1, set the job ppn
-  #       gpu_count = 1
-  #       scheduler_args += ["--exclusive"]
-  #       if gpu_count > 0
-  #         scheduler_args += ["--gpus=%d" % gpu_count]
-  #       end
-
-  #     -%>
-  #     ---
-  #     script:
-  #       native:
-  #       <%- scheduler_args.each do |arg| %>
-  #         - "<%= arg %>"
-  #       <%- end %>
 
 host_regex: '[^./]+'
 node_uri: '/node'
@@ -75,16 +12,13 @@ cancel_session_enabled: true
 
 pun_custom_env:
   OOD_DASHBOARD_TITLE: "Open OnDemand for Azure CycleCloud"
-#  OOD_DASHBOARD_LOGO: "/public/logo.png"
   OOD_BRAND_BG_COLOR: "#0078d4"
   OOD_BRAND_LINK_ACTIVE_BG_COLOR: "#212529"
   OOD_JOB_NAME_ILLEGAL_CHARS: "/"
-#  OOD_ALLOWLIST_PATH: "{{ondemand.whitelist_path | default('/')}}"
   OOD_SHELL_PING_PONG: true
 
 # See https://osc.github.io/ood-documentation/latest/customization.html#pinning-applications-to-the-dashboard
 pinned_apps_group_by: category
 pinned_apps:
   - sys/shell
-#  - category: 'Login Nodes'
   - category: 'Interactive Apps'

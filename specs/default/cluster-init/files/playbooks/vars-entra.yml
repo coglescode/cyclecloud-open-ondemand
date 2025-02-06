@@ -2,8 +2,6 @@
 httpd_auth:
 - AuthType openid-connect
 - Require valid-user
-# oidc_settings:
-#   OIDCSSLValidateServer: "Off" # Required due to self signed certs
 
 # Configuration for Entra ID with Federated Identity
 # 1 - Create and attach a User Managed Identity for the OOD VM
@@ -29,7 +27,6 @@ ood_auth_openidc:
   OIDCPassClaimsAs: 'environment'
   OIDCStateMaxNumberOfCookies: [7, true]
 
-#oidc_remote_user_claim: "email"
 logout_redirect: "/oidc?logout=https%3A%2F%2F{{ ood_fqdn }}"
 oidc_uri: /oidc
 

@@ -19,15 +19,8 @@ fi
 # Replace values in the vars.yml file with user-configured values from the CC template
 VARS_FILE=$script_dir/../files/playbooks/vars.yml
 
- # [Basic, LDAP, Entra] Select Authentication method. Basic auth will use local accounts that have a password set.
+# [Entra] Select Authentication method.
 auth_method=$(jetpack config ood.auth_method Basic) yq -i '.auth_method |= strenv(auth_method)' $VARS_FILE 
-
-## LDAP config - add values here if using LDAP
-ldap_host=$(jetpack config ood.ldap_host) yq -i '.ldap_host |= strenv(ldap_host)' $VARS_FILE # LDAP server host and port
-bind_DN=$(jetpack config ood.ldap_bind_dn) yq -i '.bind_DN |= strenv(bind_DN)' $VARS_FILE # Bind DN for LDAP
-bind_PW=$(jetpack config ood.ldap_bind_pwd) yq -i '.bind_PW |= strenv(bind_PW)' $VARS_FILE # Password for the bind DN
-user_base_DN=$(jetpack config ood.ldap_user_base_dn) yq -i '.user_base_DN |= strenv(user_base_DN)' $VARS_FILE # Base DN for user entries
-group_base_DN=$(jetpack config ood.ldap_group_base_dn) yq -i '.group_base_DN |= strenv(group_base_DN)' $VARS_FILE # Base DN for group entries
 
 # Entra config - add values here if using Entra
 client_id=$(jetpack config ood.entra_client_id) yq -i '.client_id |= strenv(client_id)' $VARS_FILE # Client ID for Entra

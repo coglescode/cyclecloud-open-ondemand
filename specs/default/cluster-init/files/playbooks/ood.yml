@@ -17,15 +17,14 @@
     ansible.builtin.include_vars:
       file: "vars-{{auth_method | lower}}.yml"
 
-  - name: Set up PAM authentication for OOD
-    include_role:
-      name: ood_pam_auth
+  # - name: Set up PAM authentication for OOD
+  #   include_role:
+  #     name: ood_pam_auth
 
   - name: set variables for Ubuntu
     set_fact:
       ood_package: "ondemand={{ondemand_version}}"
 
-  # TODO: Add a way to provide it's own certificate files cert, key, and chain
   - name: Generate a Self Signed OpenSSL certificate
     shell: |
       mkdir -pv /etc/ssl/{{ ood_fqdn }}
@@ -59,14 +58,6 @@
   - name: Perform OS dependent post installation tasks
     include_tasks: "{{ansible_distribution}}/post_install.yml"
 
-  # Restart the Dex service only when using LDAP or Entra, this need to be done after the restart of Apache so the new OOD configuration will be created
-  - name: Start dex
-    ansible.builtin.service:
-      name: ondemand-dex.service
-      state: restarted
-      enabled: true
-    when: auth_method in ['LDAP']
-
   # Create a script to run before the PUN is created, to set the user's environment if not exists
   # Defined in the pun_pre_hook_root_cmd variable set in the ood-overrides-common.yml file
   - name: Copy the pun_pre_hook script
@@ -74,14 +65,6 @@
       src: files/pun_pre_hook.sh
       dest: /etc/ood/config/pun_pre_hook.sh
       mode: 0755
-
-  # Hack to support SSL proxied apps with port 443 => only needed for Thinlinc at the moment
-  # /opt/ood/mod_ood_proxy/lib/ood/proxy.lua
-  - name: Copy the updated proxy.lua 
-    copy: 
-      src: files/proxy.lua
-      dest: /opt/ood/mod_ood_proxy/lib/ood/proxy.lua
-      mode: 0644
 
   # Install the OOD applications    
   - name: Install the OOD applications
@@ -100,13 +83,3 @@
     copy: 
       src: files/announcement.yml
       dest: /etc/ood/config/announcement.yml
-
-  # - name: Generate new ood_portal.conf file
-  #   shell: |
-  #     /opt/ood/ood-portal-generator/sbin/update_ood_portal -f
-  #   environment:
-  #     PATH: '/usr/bin:{{ ansible_env.PATH }}'
-
-
-
-
