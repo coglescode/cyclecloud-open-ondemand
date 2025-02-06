@@ -41,7 +41,6 @@ Autoscale = false
 
         # Open OnDemand Authentication options
         ood.server_name = $ood_server_name
-        ood.auth_method = $ood_auth_method
 
         # Entra config - add values here if using Entra
         ood.entra_client_id= $ood_entra_client_id  # Client ID for Entra
@@ -151,35 +150,25 @@ Order = 20
         Description = The FQDN for the Self Signed SSL Certificate. Leave blank to use the assigned private IP
         Config.ParameterType = String
 
-        [[[parameter ood_auth_method]]]
-        Required = True
-        Label = Authentication
-        Description = Authentication Method
-        ParameterType = StringList
-        Config.Plugin = pico.form.Dropdown
-        Config.FreeForm = true
-        Config.Entries := {[Value="Entra"]}
-        DefaultValue = "Entra"
-
         ## Entra options
         ## ============
         [[[parameter ood_entra_client_id]]]
+        Required = True
         Label = Client ID
         Description = Client or Application ID for Entra
         Config.ParameterType = String
-        Conditions.Excluded := ood_auth_method != "Entra"
 
         [[[parameter ood_entra_user_map_match]]]
+        Required = True
         Label = User Domain
         Description = User domain mapping without '@'
         Config.ParameterType = String
-        Conditions.Excluded := ood_auth_method != "Entra"
 
         [[[parameter ood_entra_tenant_id]]]
+        Required = True
         Label = Tenand Id
         Description = Tenant Id
         Config.ParameterType = String
-        Conditions.Excluded := ood_auth_method != "Entra"
 
     [[parameters Azure Settings]]
     Order = 10 

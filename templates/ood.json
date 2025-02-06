@@ -1,6 +1,5 @@
 {
     "UsePublicNetwork": false,
-    "ood_auth_method": "Entra",
     "ManagedIdentity": "/subscriptions/<id>/resourcegroups/<rg>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/<umi>",
     "SubnetId": "<rg>/<vnet>/<subnet>",
     "About shared": null,

@@ -19,9 +19,6 @@ fi
 # Replace values in the vars.yml file with user-configured values from the CC template
 VARS_FILE=$script_dir/../files/playbooks/vars.yml
 
-# [Entra] Select Authentication method.
-auth_method=$(jetpack config ood.auth_method Basic) yq -i '.auth_method |= strenv(auth_method)' $VARS_FILE 
-
 # Entra config - add values here if using Entra
 client_id=$(jetpack config ood.entra_client_id) yq -i '.client_id |= strenv(client_id)' $VARS_FILE # Client ID for Entra
 entra_map_match=$(jetpack config ood.entra_user_map_match) yq -i '.entra_map_match |= strenv(entra_map_match)' $VARS_FILE # Domain Mapping for Entra

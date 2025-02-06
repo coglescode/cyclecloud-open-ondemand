@@ -17,10 +17,6 @@
     ansible.builtin.include_vars:
       file: "vars-{{auth_method | lower}}.yml"
 
-  # - name: Set up PAM authentication for OOD
-  #   include_role:
-  #     name: ood_pam_auth
-
   - name: set variables for Ubuntu
     set_fact:
       ood_package: "ondemand={{ondemand_version}}"
