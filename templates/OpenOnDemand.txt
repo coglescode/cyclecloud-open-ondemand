@@ -48,19 +48,19 @@ Autoscale = false
         ood.entra_user_map_match = $ood_entra_user_map_match # User domain mapping
 
 
-        [[[configuration cyclecloud.mounts.nfs_shared]]]
-        type = nfs
-        mountpoint = /shared
-        export_path = $NFSSharedExportPath
-        address = $NFSAddress
-        options = $NFSSharedMountOptions
+#        [[[configuration cyclecloud.mounts.nfs_shared]]]
+#        type = nfs
+#        mountpoint = /shared
+#        export_path = $NFSSharedExportPath
+#        address = $NFSAddress
+#        options = $NFSSharedMountOptions
 
-        [[[configuration cyclecloud.mounts.nfs_home]]]
-        type = nfs
-        mountpoint = /home
-        export_path = ${strcat(NFSSharedExportPath, "/home")}
-        address = $NFSAddress
-        options = $NFSSharedMountOptions
+#        [[[configuration cyclecloud.mounts.nfs_home]]]
+#        type = nfs
+#        mountpoint = /home
+#        export_path = ${strcat(NFSSharedExportPath, "/home")}
+#        address = $NFSAddress
+#        options = $NFSSharedMountOptions
 
     [[node OOD]]
 
@@ -227,26 +227,53 @@ Order = 20
         ParameterType = Boolean
         Config.Label = Access master node from the Internet
 
-    [[parameters Default NFS Share]]
-    Order = 30
+[parameters Network Attached Storage]
+Order = 30
+
+    [[parameters Default NFS Share]] # You might want to change the name later
+#    Order = 5
     Label = File-system Mount for /shared
+
+
+	### Custom NFS Settings for Builtin ##
 
         [[[parameter About shared]]]
         HideLabel = true
         Config.Plugin = pico.widget.HtmlTemplateWidget
         Config.Template = ''' <p>Users' home directories reside within the <code>/shared</code> mountpoint with the base homedir <code>/shared/home</code>.</p>'''
-        Order = 6
+        Order = 10
 
-        [[[parameter NFSAddress]]]
-        Label = IP Address
-        Description = The IP address or hostname of the NFS server. Also accepts a list comma-separated addresses.
-        Config.ParameterType = String
+        [[[parameter NFSType]]]
+        Label = NFS Type
+        ParameterType = StringList
+        Config.Label = Type of NFS to use for this cluster
+        Config.Plugin = pico.form.Dropdown
+        Config.Entries := {[Label="External NFS"; Value="External"], [Label="Builtin"; Value="Builtin"]}
+        DefaultValue = Builtin
 
-        [[[parameter NFSSharedExportPath]]]
-        Label = Export Path
-        Description = The path exported by the file system
-        DefaultValue = /shared
+	[[[parameter FilesystemSize]]]
+        Label = Size (GB)
+        Description = The filesystem size (cannot be changed after initial start)
+        DefaultValue = 100
+	
+	[[[parameter NFSDiskWarning]]]
+	HideLabel = true
+        Config.Plugin = pico.widget.HtmlTemplateWidget
+        Config.Template := "<p><b>Warning</b>: switching an active cluster over to NFS will delete the shared disk.</p>"
+        Conditions.Hidden := NFSType != "External"
+	#######
 
-        [[[parameter NFSSharedMountOptions]]]
-        Label = Mount Options
-        Description = NFS Client Mount Options        
+
+       # [[[parameter NFSAddress]]]
+       # Label = IP Address
+       # Description = The IP address or hostname of the NFS server. Also accepts a list comma-separated addresses.
+       # Config.ParameterType = String
+
+       # [[[parameter NFSSharedExportPath]]]
+       # Label = Export Path
+       # Description = The path exported by the file system
+       # DefaultValue = /shared
+
+        #[[[parameter NFSSharedMountOptions]]]
+        #Label = Mount Options
+        #Description = NFS Client Mount Options        
